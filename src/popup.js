@@ -1,0 +1,14 @@
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+let settings;
+async function init(){settings=await LingoStore.getSettings();$('pair').value=`${settings.sourceLanguage}-${settings.targetLanguage}`;$('level').value=settings.level;$('goal').value=settings.goal;$('density').value=String(settings.density);if(!$('density').value){const opt=document.createElement('option');opt.value=settings.density;opt.textContent=String(settings.density);$('density').append(opt);$('density').value=String(settings.density);}$('lock').checked=settings.densityLocked;$('mode').textContent=settings.mode==='live'?'Live AI · opt-in':'Demo examples · on device';$('privacy').textContent=settings.mode==='live'?'Selected sentences and a minimal profile are sent to your configured AI provider.':'Curated demo mode. No page text is uploaded.';}
+async function save(){const[sourceLanguage,targetLanguage]=$('pair').value.split('-');settings=await LingoStore.saveSettings({sourceLanguage,targetLanguage,level:$('level').value,goal:$('goal').value,density:Number($('density').value),densityLocked:$('lock').checked});}
+for(const id of ['pair','level','goal','density','lock'])$(id).addEventListener('change',save);
+async function currentTab(){const[tab]=await chrome.tabs.query({active:true,currentWindow:true});if(!tab?.id)throw new Error('Select a public article first.');return tab;}
+$('activate').addEventListener('click',async()=>{const b=$('activate');b.disabled=true;$('status').textContent='Selecting words for this page…';try{await save();const tab=await currentTab();const own=tab.url?.startsWith(chrome.runtime.getURL(''));if(own&&!tab.url.includes('demo-page.html'))throw new Error('Use the demo article or a public reading page.');if(!own){if(!/^https?:/.test(tab.url||''))throw new Error('Open a public web article or the demo page.');await chrome.scripting.insertCSS({target:{tabId:tab.id},files:['src/content.css']});await chrome.scripting.executeScript({target:{tabId:tab.id},files:['src/vocabulary.js','src/storage.js','src/engine.js','src/content.js']});}const result=await chrome.tabs.sendMessage(tab.id,{type:'LINGO_ACTIVATE'});if(!result?.ok)throw new Error(result?.error||'No readable article found.');$('status').textContent='Learning is active. Select a green word to reveal its meaning.';}catch(error){$('status').textContent=error.message||'This page cannot be activated. Try the demo article.';}finally{b.disabled=false;}});
+$('restore').addEventListener('click',async()=>{try{const tab=await currentTab();await chrome.tabs.sendMessage(tab.id,{type:'LINGO_DISABLE'});$('status').textContent='Original text restored.';}catch(_){$('status').textContent='There is no active LingoSprout session on this page.';}});
+$('demo').addEventListener('click',()=>chrome.tabs.create({url:chrome.runtime.getURL('demo-page.html')}));
+$('profile').addEventListener('click',()=>chrome.tabs.create({url:chrome.runtime.getURL('src/dashboard.html')}));
+init();
+})();
