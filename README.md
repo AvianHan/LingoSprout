@@ -11,6 +11,7 @@ A Chrome extension prototype for contextual language learning through everyday w
 5. Open the LingoSprout extension popup and click **Open demo article**.
 6. Click **Start learning**, then click a highlighted word to explore its meaning, save it and give feedback.
 7. Open **My learning space** to explore review, quizzes, grammar practice and guided conversation.
+8. **Use on other webpages.** After installing the extension, open a public article in Chrome, click the LingoSprout extension icon, and select **Activate this page**. The offline demo uses a limited vocabulary, so some pages may show few or no replacements. Pages without a detectable reading area may not be supported.
 
 ## Features
 
